@@ -1,80 +1,163 @@
-# Fake News Detection using Bert
-<br>
-<b>Project Overview</b>
-This project focuses on detecting fake news using the BERT (Bidirectional Encoder Representations from Transformers) model. The primary goal is to build a robust machine learning model that can accurately classify news articles as either true or fake. The project involves several stages, including data preprocessing, model training, and evaluation.
-<br>
+# Fake News Detection with BERT
 
-# Introduction
-The proliferation of fake news has become a significant issue in today's digital age. Fake news can mislead the public, influence political decisions, and create social unrest. This project aims to address this problem by leveraging the BERT model to detect fake news with high accuracy.
-<br>
+## Overview
 
-# Dataset Description
-<br>
-The dataset used in this project consists of two CSV files: one containing true news articles and the other containing fake news articles. Each article includes the following attributes:
-<br>
+This project builds a BERT-based fake news classification model to classify news headlines as true or fake. The goal is to apply transformer-based NLP to misinformation detection and evaluate how well a BERT encoder with a trained classification head performs on a labeled news dataset.
 
-The dataset is availabe on [Kaggle](https://www.kaggle.com/datasets/clmentbisaillon/fake-and-real-news-dataset)<br>
+This project is a supervised text classification workflow. It is not a production misinformation-detection system.
 
-<b>Title: </b>The headline of the news article.<br>
-<b>Text: </b>The main content of the news article.<br>
-<b>Subject:</b> The category or subject of the news article.<br>
-<b>Date: </b>The publication date of the news article.<br>
-<b>Target: </b>A label indicating whether the news is true or fake.<br>
+## Business Problem
 
-The true and fake news articles are merged into a single DataFrame, and a new column, label, is created to represent the target labels numerically (0 for true and 1 for fake).
-<br>
+Fake news and misleading online content can distort public understanding, influence decision-making, and reduce trust in digital information. Automated text classification can help support content review workflows by flagging potentially unreliable news items for further investigation.
 
-# Plan Of Action
-<br>
+This project demonstrates how transformer-based NLP can be applied to classify news content using labeled examples of true and fake articles.
 
-![alt text](images/plan_of_action.png)
-<br>
+## Dataset
 
-# Data Preprocessing
-<br>
-Data preprocessing is a crucial step in preparing the dataset for model training. The following steps were performed:
-<br>
-<b>Label Encoding:</b> The target labels (True/Fake) were converted to numerical values (0/1).<br>
-<b>Data Balancing: </b>The dataset was checked for balance between true and fake news articles.<br>
-<b>Train-Test Split:</b> The dataset was split into training, validation, and test sets in a 70:15:15 ratio.<br>
-<b>Tokenization:</b> The BERT tokenizer was used to tokenize and encode the text data into a format suitable for the BERT model.<br>
+* **Source:** Kaggle Fake and Real News Dataset
+* **Total Records:** 44,898 news articles
+* **Files Used:** `True.csv` and `Fake.csv`
+* **Target Label:** `label`
+* **Label Mapping:** True = 0, Fake = 1
+* **Input Used for Modeling:** News headline/title
 
-# Model Architecture
-<br>
-The BERT model was fine-tuned for the task of fake news detection. The architecture includes:
-<br>
-<b>BERT Base Model: </b>Pre-trained BERT model (bert-base-uncased) from HuggingFace.<br>
-<b>Dropout Layer: </b>To prevent overfitting.<br>
-<b>ReLU Activation: </b>For non-linearity.<br>
-<b>Fully Connected Layers:</b> Two dense layers for classification.<br>
-<b>Softmax Activation: </b>For outputting probabilities of the classes.<br>
+The original dataset includes article title, text, subject, and publication date. In this notebook, the model is trained on article titles rather than full article body text.
 
-![alt text](images/Fine_tuning.png)
+## Methodology
 
-# Training and Evaluation<br>
-The model was trained using the AdamW optimizer and a negative log-likelihood loss function. The training process involved:
-<br>
-<b>Freezing BERT Layers: </b>Only the final layers were fine-tuned to speed up training and prevent overfitting.<br>
-<b>Training Loop: </b>The model was trained for a specified number of epochs, with periodic evaluation on the validation set.<br>
-<b>Evaluation Metrics: </b>The model's performance was evaluated using precision, recall, f1-score, and accuracy.<br>
+* Loaded true and fake news CSV files
+* Assigned text labels and numeric target labels
+* Merged true and fake articles into one shuffled dataset
+* Checked label balance across true and fake classes
+* Split the dataset into train, validation, and test sets using a 70/15/15 split
+* Loaded `bert-base-uncased` tokenizer and BERT base model from Hugging Face
+* Tokenized news titles with a maximum sequence length of 15 tokens
+* Converted tokenized inputs into PyTorch tensors
+* Created PyTorch `DataLoader` objects for training and validation
+* Froze the pretrained BERT encoder layers
+* Trained a custom neural classification head on top of BERT embeddings
+* Evaluated model performance using precision, recall, F1-score, and accuracy
+* Tested the model on unseen example headlines
 
-# Results<br>
-The model achieved an accuracy of 86% on the test set. The detailed classification report is as follows:<br>
+## Model Architecture
 
-![alt text](images/classification_report.png)
-<br>
-The model demonstrated a balanced performance across both classes, indicating its effectiveness in detecting fake news.<br>
+The model uses a frozen BERT encoder with a custom classifier head:
 
-# Web Application
-<br>
+* `bert-base-uncased` pretrained BERT encoder
+* Dropout layer
+* Fully connected layer: 768 → 512
+* ReLU activation
+* Fully connected output layer: 512 → 2
+* LogSoftmax output for binary classification
 
+Because the BERT encoder is frozen, the project trains the classification head rather than fully fine-tuning all BERT layers.
+
+## Training Setup
+
+* **Framework:** PyTorch
+* **Transformer Library:** Hugging Face Transformers
+* **Optimizer:** AdamW
+* **Loss Function:** Negative Log-Likelihood Loss
+* **Epochs:** 3
+* **Batch Size:** 32
+* **Train / Validation / Test Split:** 70% / 15% / 15%
+* **Device:** GPU when available
+
+## Model Evaluation
+
+| Class            | Precision |   Recall | F1-score |   Support |
+| ---------------- | --------: | -------: | -------: | --------: |
+| True News        |      0.83 |     0.89 |     0.86 |     3,212 |
+| Fake News        |      0.90 |     0.83 |     0.86 |     3,523 |
+| **Accuracy**     |           |          | **0.86** | **6,735** |
+| **Macro Avg**    |  **0.86** | **0.86** | **0.86** | **6,735** |
+| **Weighted Avg** |  **0.86** | **0.86** | **0.86** | **6,735** |
+
+The model achieved **86% test accuracy** and **86% macro F1-score**, with balanced performance across true and fake news classes.
+
+## Unseen Headline Test
+
+The trained model was tested on four unseen news headlines:
+
+```text
+Predictions: [1, 1, 0, 0]
+```
+
+Using the project label mapping:
+
+```text
+0 = True
+1 = Fake
+```
+
+The sample predictions correctly identified the first two examples as fake and the last two examples as true.
+
+## Web Application
+
+The repository includes a basic Flask application structure for serving predictions through a web interface.
 ![alt text](images/web_app.png)
-<br>
 
-# Conclusion
-<br>
-This project successfully developed a BERT-based model for fake news detection with high accuracy. The model can be further improved by:
-<br>
-Increasing Training Data: More diverse and larger datasets can enhance model performance.<br>
-Hyperparameter Tuning: Fine-tuning hyperparameters for optimal performance.<br>
-Advanced Architectures: Exploring more advanced transformer architectures or ensemble methods.<br>
+## Business Impact
+
+This project shows how transformer-based NLP can support misinformation review workflows by classifying news headlines into true or fake categories. The model can help prioritize content for human review, reduce manual screening effort, and demonstrate how pretrained language models can be adapted to text classification tasks.
+
+## Tech Stack
+
+Python, Pandas, NumPy, PyTorch, Hugging Face Transformers, BERT, Scikit-learn, Matplotlib, Flask, Jupyter Notebook
+
+## Repository Structure
+
+```text
+fake-news-detection-bert/
+├── images/
+├── templates/
+├── Fake.csv
+├── True.csv
+├── Fake_News_Detection_BERT.ipynb
+├── app.py
+├── tokenizer.pickle
+├── requirements.txt
+├── myvenv.yml
+└── README.md
+```
+
+## How to Run
+
+```bash
+git clone https://github.com/amit4009/fake-news-detection-bert.git
+cd fake-news-detection-bert
+pip install -r requirements.txt
+jupyter notebook
+```
+
+Then open:
+
+```text
+Fake_News_Detection_BERT.ipynb
+```
+
+## Run the Flask App
+
+```bash
+python app.py
+```
+
+## Limitations
+
+* The model is trained on news titles only, not full article text.
+* The BERT encoder is frozen, so the project does not fully fine-tune all BERT layers.
+* The maximum sequence length is 15 tokens, which may truncate longer headlines.
+* The dataset may contain publisher/source patterns that the model can learn instead of true misinformation signals.
+* The model should not be treated as a production misinformation-detection system without broader validation.
+* Real-world fake news detection requires additional context, source reliability signals, temporal validation, and human review.
+
+## Future Improvements
+
+* Train on full article text in addition to titles
+* Increase maximum sequence length for richer context
+* Fine-tune all or selected BERT layers instead of freezing the encoder
+* Add confusion matrix visualization
+* Compare BERT with DistilBERT and RoBERTa
+* Add SHAP or attention-based interpretability analysis
+* Add model monitoring for topic drift and emerging misinformation patterns
+* Improve the Flask app with cleaner UI and API endpoint examples
